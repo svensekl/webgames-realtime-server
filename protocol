@@ -1,0 +1,88 @@
+[<name>] means a json field <name>
+
+
+general:
+all packets should be valid json format with at least a type field
+
+session-create: {
+	"type": "session-create"
+}
+
+session-start: {
+	"type": "session-start",
+	"sid": "<sid>", ## "the unique session id assigned to the website"
+}
+
+session-end: {
+	"type": "session-end",
+	"reason": "<reason>" ## "this field is required. If there is no reason for termination, it should be left empty, but still exist"
+}
+
+passthrough: {
+	"type": "passthrough",
+	"for": ## "can be of type string or array of strings. it should have a value based on who is sending it
+	sent by a website: either 'all' if you want to send to all clients, '<cid>' to send to that client or array of strings with values '<cid>' to send to the specified <cid>'s
+	sent by the client: should have the value 'display' and data will be sent to the website"
+
+	[ ## "if all clients should receive the data, this should be of string type and have value 'all'. If this message is sent by the client, this field should be of string type and have value 'server'"
+		"<cid>", ## "the client id of the client that should receive the data"
+		... ## "you can specify as many clients as you want"
+	],
+	"data": {} ## "any data the client wishes to pass to recipient. It should be of object type"
+}
+
+control: { ## "this is a generic controller packet. You should generally use a more specific packet instead of this one. It exists more for testing purposes than anything else"
+	"type": "control",
+	"action": "<action>" ## what has been done (button pressed, finger swipe...)
+}
+
+activity-start: {
+	"type": "activity-start",
+	"activity": "<aid>" ## "a predetermined value from the activity id section of this document"
+}
+
+session-disconnect: {
+	"type": "session-disconnect"
+}
+
+client-connected: {
+	"type": "client-connected",
+	"cid": "<cid>" ## "unique client id"
+}
+
+session-connect: {
+	"type": "session-connect",
+	"sid": "<sid>"
+}
+
+session-connected: {
+	"type": "session-connected",
+	"successful": true|false
+}
+
+website <> server
+handshake:
+first data should be sent by website and it should be a session-create packet
+the server then responds with a session-start packet
+afterwards data can be sent by anyone at any time
+
+lifetime:
+valid packets from website: {session-end, passthrough}
+valid packets from server: {session-end, client-connected}
+
+finish:
+a session-end packet is sent by either side after which no side should send or recieve any data
+
+client <> server
+handshake:
+first packet sent should be from the client and be a session-connect packet
+the server then responds with a session-connected packet
+afterwards data can be sent by anyone at any time
+
+valid packets from client: {session-disconnect, passthrough}
+valid packets from server: {session-disconnect}
+
+website <> client
+all packets in this should be encapsulated in the "data" field of a passthrough packet with a recipient and sent to the server. they do not directly communicate to each other
+valid packets from website: {activity-start}
+valid packets from client: {control}
