@@ -3,14 +3,18 @@
 	"version": "0.0.1",
 	"description": "WebGames server",
 	"main": "server.js",
-	"type": "module",
 	"scripts": {
-		"start": "node src/server.js"
+		"start": "node out/server.js"
 	},
 	"dependencies": {
+		"@types/node": "^17.0.15",
+		"@types/ws": "^8.2.2",
+		"jsonwebtoken": "^8.5.1",
 		"ws": "^8.4.0"
 	},
 	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^5.10.2",
+		"@typescript-eslint/parser": "^5.10.2",
 		"eslint": "^8.6.0"
 	}
 }
