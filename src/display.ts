@@ -1,41 +1,25 @@
+import { Socket } from 'net';
+import { device_connected, dti } from 'webgames-common-lib';
 import Device from './device';
-import Session from './session';
-import Packet from './packet';
-import WebSocket, { WebSocketServer } from 'ws';
+import { Session } from './session';
 
 class Display extends Device {
-	private ws: WebSocket;
-
-	constructor(sock: WebSocket) {
-		super();
-		this.ws = sock;
-		sock.onmessage = (msg) => {
-			const json = Packet.parse(msg.data.toString());
-
-			if (json['type'] === "session-end") {
-				this.destroy();
-				return;
-			}
-
-			this.onMessage(json);
-		};
-	}
-
-	public static startListner() {
-		const server = new WebSocketServer({ port: 1234 });
-		server.on('connection', (ws: WebSocket) => {
-			new Session(new Display(ws));
-		});
-		return;
-	}
-
-	send(json: unknown): void {
-		this.ws.send(JSON.stringify(json));
-	}
+	static deviceType: dti = "display";
 
     destroy(): void {
         throw new Error('Method not implemented.');
     }
+	
+	protected onConnect() {
+		// display creates its own session on connection
+		this.session = Session.new(this);
+		const json: device_connected = {
+			type: "device-connected",
+			successful: true,
+			ust: this.session.ust,
+		};
+		this.send(json);
+	}
 }
 
 export default Display;

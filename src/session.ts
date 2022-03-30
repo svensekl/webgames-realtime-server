@@ -1,90 +1,101 @@
-import Display from './display';
-import Packet from './packet';
+import { generic_packet, passthrough, ucid, ust } from 'webgames-common-lib';
+import Controller from './controller';
 import Device from './device';
-import SessionHandler from './sessionhandler';
+import Display from './display';
+
+const sessions: Session[] = [];
 
 class Session {
-	public sid: string;
-	private display: Display;
-	private clients: Device[];
+	static new(display: Display): Session {
+		const ret = sessions.find(s => s.display.ucid === display.ucid);
+		if (ret) {
+			console.log(display.ucid + " connected to an existing session.");
+			ret.display = display;
+			return ret;
+		}
+
+		console.log(display.ucid + " is creating a new session.");
+		return new Session(display);
+	}
+
+	static get(ust: ust): Session | undefined {
+		return sessions.find(s => s.ust === ust);
+	}
+
+	public ust: ust;
 
 	constructor(display: Display) {
-		this.display = display; // website
-		this.clients = []; // phones
+		this.display = display;
+		this.clients = [];
 
-		this.sid = SessionHandler.bind(this);
+		// generate new ust...
+		// get usid...
+		this.ust = 'sid';
+		sessions.push(this);
 
-		const displayMessageHandler = (msg: string) => {
-			const json = Packet.parse(msg);
+		this.display.on(Display.events.message, this.fromDisplay);
+	}
 
-			if (json["type"] === "session-end") {
-				// TODO: reason
-				// this.disconnect(null);
-				return;
+	connect(client: Controller) {
+		console.log("client connected");
+		client.on(Controller.events.message, (msg) => { this.fromController(msg, client); });
+		this.clients.push(client);
+	}
+
+	/////////////////////////////////////////////
+	// private usid: string;
+	private display: Display;
+	private clients: Controller[];
+
+	
+	private getDevice(ucid: ucid): Device | undefined {
+		if (this.display.ucid === ucid) {
+			return this.display;
+		}
+		return this.clients.find(client => {
+			if (client.ucid === ucid) {
+				return true;
 			}
-
-			if (json["type"] === "passthrough") {
-				if (!json["for"] || !json["data"]) {
-					throw new Error("Garbled passthrough packet: " + JSON.stringify(json));
-				}
-				// TODO: json.for
-				this.clients.forEach(client => {
-					client.send(JSON.stringify(json["data"]));
-				});
-				return;
-			}
-		};
-
-		// wait for session-create packet
-		this.display.on(Display.events.message, (json) => {
-			if (json.type !== "session-create") {
-				throw new Error("First message not a valid session-create packet: " + JSON.stringify(json));
-			}
-
-			// send a session-start packet
-			const packet = {
-				type: "session-start",
-				sid: this.sid,
-			}
-			this.display.send(packet);
-			this.display.removeAllListeners(Display.events.message);
-			this.display.on('message', displayMessageHandler);
-		});
-
-		this.display.on(Display.events.disconnect, () => {
-			this.clients.forEach(client => {
-				client.destroy();
-			});
 		})
 	}
 
-	disconnect(client: Device) {
-		// send client disconnected message to display
-		console.log('client disconnected');
-		this.clients.filter(item => item !== client);
+	private passthrough(data: passthrough, sender: Device) {
+		let recvrs: ucid[];
+		if (typeof data.for === 'string') {
+			recvrs = [data.for];
+		} else {
+			recvrs = data.for;
+		}
+
+		const send: passthrough = {
+			type: "passthrough",
+			for: sender.ucid,
+			data: data.data,
+		};
+
+		console.log("passing through");
+
+		recvrs.forEach(client => {
+			this.getDevice(client)?.send(send);
+		});
 	}
 
-	connect(client: Device) {
-		this.clients.push(client);
-		console.log('client connected');
-		const json = {
-			type: "session-connected",
-			successful: true,
-		};
-		client.send(JSON.stringify(json));
-		client.on(Device.events.message, (json) => {
-			if (json['type'] === "passthrough") {
-				if (!json['data']) {
-					throw new Error("Garbled passthrough message");
-				}
-				this.display.send(JSON.stringify(json.data));
-				return;
-			}
-		});
-		client.on(Device.events.disconnect, () => {
-			this.disconnect(client);
-		});
+	private fromDisplay(data: generic_packet) {
+		const tmp = passthrough.safeParse(data);
+		if (tmp.success) {
+			this.passthrough(tmp.data, this.display);
+			return;
+		}
 	}
+
+	private fromController(data: generic_packet, sender: Controller) {
+		const tmp = passthrough.safeParse(data);
+		if (tmp.success) {
+			this.passthrough(tmp.data, sender);
+			return;
+		}
+	}
+
 }
 
-export default Session;
+export { Session };

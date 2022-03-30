@@ -1,5 +1,5 @@
-import Display from './display';
-import Controller from './controller';
+import NetSocketListener from "./listeners/netsocket";
+import WebSocketListener from "./listeners/websocket";
 
-Display.startListner();
-Controller.startListner();
+new WebSocketListener();
+new NetSocketListener();

@@ -1,20 +1,35 @@
 {
-	"name": "server",
-	"version": "0.0.1",
-	"description": "WebGames server",
-	"main": "server.js",
-	"scripts": {
-		"start": "node out/server.js"
-	},
-	"dependencies": {
-		"@types/node": "^17.0.15",
-		"@types/ws": "^8.2.2",
-		"jsonwebtoken": "^8.5.1",
-		"ws": "^8.4.0"
-	},
-	"devDependencies": {
-		"@typescript-eslint/eslint-plugin": "^5.10.2",
-		"@typescript-eslint/parser": "^5.10.2",
-		"eslint": "^8.6.0"
-	}
+  "name": "webgames-server",
+  "version": "0.0.1",
+  "description": "WebGames server",
+  "main": "server.js",
+  "scripts": {
+    "start": "tsc && node out/server.js"
+  },
+  "dependencies": {
+    "@types/node": "^17.0.15",
+    "@types/pg": "^8.6.4",
+    "@types/ws": "^8.2.2",
+    "jsonwebtoken": "^8.5.1",
+    "pg": "^8.7.3",
+    "webgames-common-lib": "file:../lib",
+    "ws": "^8.4.0",
+    "zod": "^3.11.6"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.8",
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svensekl/webgames-realtime-server.git"
+  },
+  "author": "",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/svensekl/webgames-realtime-server/issues"
+  },
+  "homepage": "https://github.com/svensekl/webgames-realtime-server#readme"
 }
